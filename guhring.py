@@ -4,25 +4,26 @@ import re
 import time
 import requests
 from openpyxl import load_workbook
+import os
 
 
 def get_tools():
-    nos = {}
-    i = 2
+    items = []
+    i = 4
     while True:
-        if ws[f"a{i}"].value:
-            nos.update({ws[f"a{i}"].value: ws[f"r{i}"].value})
-        if not ws[f"a{i}"].value:
+        if ws[f"d{i}"].value and not os.path.exists(f"guhring/{ws[f'd{i}'].value}.gif"):
+            items.append(ws[f'd{i}'].value)
+        if not ws[f"d{i}"].value:
             break
         i += 1
-    return nos
+    return items
 
 
 def scrape_and_download(art, link, line):
     site = link
     driver = webdriver.Chrome()
     driver.get(site)
-    time.sleep(3)
+    time.sleep(2)
 
     pics = BeautifulSoup(driver.page_source, 'html.parser')
     img_tags = pics.find_all('img')
@@ -33,7 +34,7 @@ def scrape_and_download(art, link, line):
         filename = \
             re.search(rf'{line}.jpg$', url)
         if filename:
-            print(f"Found picture for: {art}, downloading...")
+            # print(f"Found picture for: {art}, downloading...")
             with open(f'guhring/{art}.gif', 'wb') as handle:
                 response = requests.get(url, stream=True)
                 if not response.ok:
@@ -46,20 +47,25 @@ def scrape_and_download(art, link, line):
             break
 
 
-def gen_link(line, dim):
-    split_dim = str(dim).split(".")
-    dim = str(split_dim[0].zfill(3)) + str(split_dim[1]) + ((4 - len(split_dim[1])) * "0")
-    return f"https://webshop.guehring.no/0000090{str(line).zfill(4)}{dim}"
+def gen_link(item):
+    line = item.split(" ")[0]
+    dim = item.split(" ")[1]
+    formatted_dim = dim.split(",")[0].zfill(3) + dim.split(",")[1] + ((4 - len(dim.split(",")[1])) * "0")
+    formatted_line = str(line).zfill(4)
+    return f"https://webshop.guehring.no/0000090{formatted_line}{formatted_dim}"
 
 
-# wb = load_workbook('Coroturn_CXS.xlsx', data_only=True)
-# ws = wb["Ark1"]
-art = 124153
-line = 391
-dim = 2.184
-print(gen_link(line, dim))
+wb = load_workbook('guhring.xlsx', data_only=True)
+ws = wb["Sheet1"]
 
-# art_nos = get_tools()
+tools = get_tools()
+print(f"Attempting to scrape pictures for {len(tools)} tools.")
 
-# for key in art_nos:
-scrape_and_download(art, gen_link(line, dim), line)
+failed = 0
+for tool in tools:
+    scrape_and_download(tool, gen_link(tool), tool.split(" ")[0])
+    if not os.path.exists(f"guhring/{tool}.gif"):
+        print(f"Download failed for {tool}: {gen_link(tool)}")
+        failed += 1
+
+print(f"Failed to scrape {failed} tools.")
