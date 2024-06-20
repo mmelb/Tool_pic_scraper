@@ -11,7 +11,7 @@ def get_tools():
     items = []
     i = 4
     while True:
-        if ws[f"d{i}"].value and not os.path.exists(f"guhring/{ws[f'd{i}'].value}.gif"):
+        if ws[f"d{i}"].value and not os.path.exists(f"seco/{ws[f'd{i}'].value}.gif"):
             items.append(ws[f'd{i}'].value)
         if not ws[f"d{i}"].value:
             break
@@ -19,7 +19,15 @@ def get_tools():
     return items
 
 
-def scrape_and_download(art, link, line):
+def gen_link(item):
+    if item[3] == "-":
+        item = item.split("-")[1]
+    if item[3] == " ":
+        item = item.split(" ")[1]
+    return f"https://www.secotools.com/article/p_{item.zfill(8)}?entryPoint=ProductDetails%2FWS"
+
+
+def scrape_and_download(art, link):
     site = link
     driver = webdriver.Chrome()
     driver.get(site)
@@ -32,9 +40,10 @@ def scrape_and_download(art, link, line):
 
     for url in urls:
         filename = \
-            re.search(rf'{line}.jpg$', url)
+            re.search(
+                r'^https://common-secoresources.azureedge.net/pictures/core/Content/ProductImages/As_Delivered_Image/', url)
         if filename:
-            with open(f'guhring/{art}.gif', 'wb') as handle:
+            with open(f'seco/{art}.gif', 'wb') as handle:
                 response = requests.get(url, stream=True)
                 if not response.ok:
                     print(response)
@@ -46,15 +55,7 @@ def scrape_and_download(art, link, line):
             break
 
 
-def gen_link(item):
-    line = item.split(" ")[0]
-    dim = item.split(" ")[1]
-    formatted_dim = dim.split(",")[0].zfill(3) + dim.split(",")[1] + ((4 - len(dim.split(",")[1])) * "0")
-    formatted_line = str(line).zfill(4)
-    return f"https://webshop.guehring.no/0000090{formatted_line}{formatted_dim}"
-
-
-wb = load_workbook('guhring.xlsx', data_only=True)
+wb = load_workbook('seco.xlsx', data_only=True)
 ws = wb["Sheet1"]
 
 tools = get_tools()
@@ -62,8 +63,10 @@ print(f"Attempting to scrape pictures for {len(tools)} tools.")
 
 failed = 0
 for tool in tools:
-    scrape_and_download(tool, gen_link(tool), tool.split(" ")[0])
-    if not os.path.exists(f"guhring/{tool}.gif"):
+    # print(tool)
+    # print(gen_link(tool))
+    scrape_and_download(tool, gen_link(tool))
+    if not os.path.exists(f"seco/{tool}.gif"):
         print(f"Download failed for {tool}: {gen_link(tool)}")
         failed += 1
 

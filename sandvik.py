@@ -36,7 +36,6 @@ def scrape_and_download(art_no, link):
         filename = \
             re.search(r'^https://productinformation.sandvik.coromant.com/s3/documents/pictures/pict-3d-view', url)
         if filename:
-            # print(f"Found picture for: {art_no}, downloading...")
             with open(f'sandvik/{art_no}.gif', 'wb') as handle:
                 response = requests.get(url, stream=True)
                 if not response.ok:
