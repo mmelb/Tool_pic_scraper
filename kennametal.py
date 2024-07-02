@@ -33,22 +33,24 @@ def scrape_and_download(art, link):
     img_tags = pics.find_all('img')
 
     urls = [img['src'] for img in img_tags]
-
+    count = 0
     for url in urls:
         filename = \
             re.search(
                 r'^https://images.kennametal.com/is/image/Kennametal/', url)
         if filename:
-            with open(f'kennametal/{art}.gif', 'wb') as handle:
-                response = requests.get(url, stream=True)
-                if not response.ok:
-                    print(response)
-                for block in response.iter_content(1024):
-                    if not block:
-                        break
+            count += 1
+            if count == 1:  # Change this if wrong picture is downloaded.
+                with open(f'kennametal/{art}.gif', 'wb') as handle:
+                    response = requests.get(url, stream=True)
+                    if not response.ok:
+                        print(response)
+                    for block in response.iter_content(1024):
+                        if not block:
+                            break
 
-                    handle.write(block)
-            break
+                        handle.write(block)
+                break
 
 
 wb = load_workbook('kennametal.xlsx', data_only=True)
